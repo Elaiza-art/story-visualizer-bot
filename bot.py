@@ -1,10 +1,10 @@
 import asyncio
 import logging
+from aiogram.types import BotCommandScopeChat
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.filters import Command, CommandStart
-
 from config import config
 from handlers import start, generate, status, history, favorites, admin
 
@@ -38,12 +38,12 @@ def create_dispatcher() -> Dispatcher:
 
 async def on_startup(bot: Bot):
 
-    logger.info("🤖 Бот запущен!")
+    logger.info("Бот запущен!")
 
     bot_info = await bot.get_me()
     logger.info(f"Бот: @{bot_info.username} (ID: {bot_info.id})")
 
-    # команды меню (пока заглушка)
+    # команды пользователей
     await bot.set_my_commands([
         types.BotCommand(command="start", description="Запустить бота"),
         types.BotCommand(command="help", description="Справка"),
@@ -54,6 +54,21 @@ async def on_startup(bot: Bot):
     ])
     logger.info("Команды меню установлены!")
 
+    # команды для админа
+    if config.ADMIN_ID:
+        await bot.set_my_commands([
+            types.BotCommand(command="start", description="Запустить бота"),
+            types.BotCommand(command="help", description="Справка"),
+            types.BotCommand(command="new", description="Создать проект"),
+            types.BotCommand(command="status", description="Статус генерации"),
+            types.BotCommand(command="history", description="История проектов"),
+            types.BotCommand(command="favorites", description="Избранное"),
+            types.BotCommand(command="admin_users", description="👥 Пользователи на модерации"),
+            types.BotCommand(command="approve", description="✅ Одобрить пользователя"),
+            types.BotCommand(command="admin_stats", description="📊 Статистика бота"),
+        ], scope=BotCommandScopeChat(chat_id=config.ADMIN_ID))
+
+        logger.info(f"Админ-команды добавлены для ID: {config.ADMIN_ID}")
 
 async def on_shutdown(bot: Bot):
 
@@ -69,13 +84,13 @@ async def main():
     dp.startup.register(on_startup)
     dp.shutdown.register(on_shutdown)
 
-    logger.info("🔄 Запускаем поллинг...")
+    logger.info("Запускаем поллинг...")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        logger.info("⚡ Остановка по Ctrl+C")
+        logger.info("Остановка по Ctrl+C")
     except Exception as e:
-        logger.error(f"❌ Критическая ошибка: {e}", exc_info=True)
+        logger.error(f"Критическая ошибка: {e}", exc_info=True)

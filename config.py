@@ -18,8 +18,10 @@ class Config:
 
     BOT_TOKEN = os.getenv("BOT_TOKEN")
     API_URL = os.getenv("API_URL", "http://localhost:8000")
+
+    API_MODE = os.getenv("API_MODE", "local")
     
-    ADMIN_ID = os.getenv("ADMIN_ID")
+    ADMIN_ID = os.getenv("ADMIN_ID") # Режим работы
     if ADMIN_ID:
         try:
             ADMIN_ID = int(ADMIN_ID)

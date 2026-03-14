@@ -1,82 +1,94 @@
-import aiohttp
 import logging
+
 from typing import Optional, Dict, Any
-from config import config
+from database import (
+    get_user_by_telegram_id,
+    register_user as db_register_user,
+    approve_user,
+    get_pending_users,
+    get_all_users,
+    get_user_projects,
+    update_project_status,
+    add_to_favorites,
+    get_user_favorites,
+    create_project as db_create_project
+)
 
 logger = logging.getLogger(__name__)
 
+
 class APIClient:
 
-    def __init__(self, base_url: str, timeout: int = 30):
-        self.base_url = base_url.rstrip('/')
-        self.timeout = timeout
-        self.session: Optional[aiohttp.ClientSession] = None
-
-    async def _get_session(self) -> aiohttp.ClientSession:
-        # создание сессии
-        if self.session is None or self.session.closed:
-            self.session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=self.timeout))
-        return self.session
-
-    async def close(self):
-        if self.session and not self.session.closed:
-            await self.session.close()
+    def __init__(self, mode: str = "local"):
+        self.mode = mode  # "local" или "remote"
+        logger.info(f"APIClient инициализирован в режиме: {mode}")
 
     async def register_user(self, telegram_id: int, username: str) -> Optional[Dict[str, Any]]:
-        """
-        Регистрирует или находит пользователя в БД.
-
-        Args:
-            telegram_id: Telegram ID пользователя
-            username: Username пользователя (@name)
-
-        Returns:
-            Данные пользователя или None при ошибке
-        """
-        try:
-            session = await self._get_session()
-            async with session.post(
-                    f"{self.base_url}/api/users/register",
-                    json={
-                        "telegram_id": telegram_id,
-                        "username": username
-                    }
-            ) as response:
-                if response.status == 200:
-                    return await response.json()
-                else:
-                    logger.error(f"Ошибка регистрации пользователя: {response.status}")
-                    return None
-        except Exception as e:
-            logger.error(f"Исключение при регистрации пользователя: {e}")
+        if self.mode == "local": # Используется пока локальная БД
+            user = get_user_by_telegram_id(telegram_id)
+            if user:
+                return user
+            return db_register_user(telegram_id, username, username)
+        else:
+            logger.warning("Remote mode not implemented yet")
             return None
 
     async def check_user_access(self, telegram_id: int) -> Optional[Dict[str, Any]]:
-        """
-        Проверяет, есть ли у пользователя доступ.
-
-        Args:
-            telegram_id: Telegram ID пользователя
-
-        Returns:
-            Данные пользователя с полем is_approved или None
-        """
-        try:
-            session = await self._get_session()
-            async with session.get(
-                    f"{self.base_url}/api/users/{telegram_id}/check"
-            ) as response:
-                if response.status == 200:
-                    return await response.json()
-                elif response.status == 404:
-                    # Пользователь не найден — нужно зарегистрировать
-                    return None
-                else:
-                    logger.error(f"Ошибка проверки доступа: {response.status}")
-                    return None
-        except Exception as e:
-            logger.error(f"Исключение при проверке доступа: {e}")
+        if self.mode == "local":
+            return get_user_by_telegram_id(telegram_id)
+        else:
             return None
 
+    async def create_project(self, telegram_id: int, text: str, title: str = "Без названия"):
+        if self.mode == "local":
+            user = get_user_by_telegram_id(telegram_id)
+            if not user:
+                return None
 
-api_client = APIClient(base_url=config.API_URL, timeout=config.API_TIMEOUT)
+            # создание проекта в БД
+            return db_create_project(
+                user_id=user['id'],
+                text=text,
+                title=title
+            )
+        else:
+            # TODO: Реализовать HTTP-запрос к реальному API
+            logger.warning("Удаленный режим еще не реализован")
+            return None
+
+    async def get_projects(self, telegram_id: int, limit: int = 10):
+        if self.mode == "local":
+            return get_user_projects(telegram_id, limit)
+        else:
+            return []
+
+    async def get_favorites(self, telegram_id: int):
+        if self.mode == "local":
+            return get_user_favorites(telegram_id)
+        else:
+            return []
+# Проверrf, в избранном ли проект
+    async def is_favorite(self, telegram_id: int, project_id: int) -> bool:
+
+        if self.mode == "local":
+            from database import get_user_favorites
+            favorites = get_user_favorites(telegram_id)
+            return any(p['id'] == project_id for p in favorites)
+        return False
+
+    # Админ-функции
+    async def get_pending_users_list(self):
+        # Список пользователей на одобрение
+        if self.mode == "local":
+            return get_pending_users()
+        return []
+
+    async def approve_user_by_id(self, telegram_id: int) -> bool:
+        # Одобрить пользователя
+        if self.mode == "local":
+            return approve_user(telegram_id)
+        return False
+
+
+# Для переключения режима: "local" для разработки, "remote" для продакшена
+api_client = APIClient(mode="local")
