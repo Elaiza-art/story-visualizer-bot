@@ -49,7 +49,9 @@ class APIClient:
             return db_create_project(
                 user_id=user['id'],
                 text=text,
-                title=title
+                title=title,
+                content_type=content_type,
+                model=model
             )
         else:
             # TODO: Реализовать HTTP-запрос к реальному API

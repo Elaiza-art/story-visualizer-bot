@@ -39,6 +39,8 @@ def init_db():
             user_id INTEGER NOT NULL,
             title TEXT,
             text TEXT,
+            content_type TEXT DEFAULT 'video',  
+            model TEXT DEFAULT 'comfyui',       
             video_path TEXT,
             status TEXT DEFAULT 'pending',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -153,13 +155,15 @@ def get_all_users() -> List[Dict[str, Any]]:
 
 
 # Функционал для работы с проектами  пользователей
-def create_project(user_id: int, text: str, title: str = "Без названия") -> Optional[Dict[str, Any]]:
+def create_project(user_id: int, text: str, title: str = "Без названия",
+                   content_type: str = "video", model: str = "comfyui") -> Optional[Dict[str, Any]]:
+    """Создаёт новый проект"""
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
-        """INSERT INTO projects (user_id, title, text, status)
-           VALUES (?, ?, ?, 'pending')""",
-        (user_id, title, text)
+        """INSERT INTO projects (user_id, title, text, content_type, model, status)
+           VALUES (?, ?, ?, ?, ?, 'pending')""",
+        (user_id, title, text, content_type, model)
     )
     conn.commit()
 
