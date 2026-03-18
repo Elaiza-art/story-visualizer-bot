@@ -7,7 +7,10 @@ import logging
 router = Router()
 logger = logging.getLogger(__name__)
 
+FAVORITES_BUTTON = "⭐ Избранное"
+
 # для показа избранного
+@router.message(F.text == FAVORITES_BUTTON)
 @router.message(Command("favorites"))
 async def cmd_favorites(message: types.Message):
 

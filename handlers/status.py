@@ -8,6 +8,8 @@ router = Router()
 logger = logging.getLogger(__name__)
 
 # Статусы для отображения
+STATUS_BUTTON = "⏳ Прогресс"
+
 STATUS_EMOJI = {
     'pending': '⏳',
     'generating': '🔄',
@@ -95,6 +97,7 @@ def get_status_keyboard(has_active_projects: bool) -> types.InlineKeyboardMarkup
 
 # Показывает статус текущих проектов пользователя
 @router.message(Command("status"))
+@router.message(F.text == STATUS_BUTTON)
 async def cmd_status(message: types.Message):
     telegram_id = message.from_user.id
 

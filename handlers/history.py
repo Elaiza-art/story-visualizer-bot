@@ -9,8 +9,10 @@ router = Router()
 logger = logging.getLogger(__name__)
 
 PROJECTS_PER_PAGE = 5  # Количество проектов на страницу
+HISTORY_BUTTON = "📁 История"
 
 # функция для показа истории проектов
+@router.message(F.text == HISTORY_BUTTON)
 @router.message(Command("history"))
 async def cmd_history(message: types.Message, page: int = 0):
     telegram_id = message.from_user.id

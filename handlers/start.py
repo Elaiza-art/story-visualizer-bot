@@ -7,6 +7,7 @@ from keyboards.inline import get_main_menu
 router = Router()
 logger = logging.getLogger(__name__)
 
+HELP_BOTTON = "❓ Помощь"
 
 @router.message(CommandStart())
 async def cmd_start(message: types.Message):
@@ -87,6 +88,7 @@ async def cmd_start(message: types.Message):
         )
 
 @router.message(Command("help"))
+@router.message(F.text == HELP_BOTTON)
 async def cmd_help(message: types.Message):
     """Обработчик команды /help"""
     await message.answer(

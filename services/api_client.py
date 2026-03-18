@@ -39,7 +39,7 @@ class APIClient:
         else:
             return None
 
-    async def create_project(self, telegram_id: int, text: str, title: str = "Без названия"):
+    async def create_project(self, telegram_id: int, text: str, title: str = "Без названия", content_type: str = "video", model: str = "comfyui"):
         if self.mode == "local":
             user = get_user_by_telegram_id(telegram_id)
             if not user:
